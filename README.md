@@ -1,7 +1,7 @@
 # csharp-SimpleLibraries
 Collection of small - single-".cs" libraries.
 
-## Kirides.Events.EventAggregator
+## Kirides.Libs.Events.EventAggregator
 
 After having the need for a simple loosely coupled eventing system, and a little bit of boredom i decided to look up what it needs to create an simple EventAggregator implementation.
 
