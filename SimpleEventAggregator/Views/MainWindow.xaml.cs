@@ -1,4 +1,4 @@
-﻿using Kirides.Events;
+﻿using Kirides.Libs.Events;
 using SimpleEventAggregator.ViewModels;
 using System.Windows;
 

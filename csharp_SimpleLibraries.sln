@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleEventAggregator", "SimpleEventAggregator\SimpleEventAggregator.csproj", "{579D2840-6B00-4E18-8CEC-DDEAED4CA340}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example_EventAggregator", "SimpleEventAggregator\Example_EventAggregator.csproj", "{579D2840-6B00-4E18-8CEC-DDEAED4CA340}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kirides.Libs", "Kirides.Libs\Kirides.Libs.csproj", "{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{579D2840-6B00-4E18-8CEC-DDEAED4CA340}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{579D2840-6B00-4E18-8CEC-DDEAED4CA340}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{579D2840-6B00-4E18-8CEC-DDEAED4CA340}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

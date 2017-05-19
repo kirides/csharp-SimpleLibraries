@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-namespace Kirides.Events
+namespace Kirides.Libs.Events
 {
-
     public class EventAggregator : IEventAggregator
     {
-        private readonly ConcurrentDictionary<Type, ICollection<Subscriber>> WeakSubscribers = new ConcurrentDictionary<Type, ICollection<Subscriber>>();
+        private readonly ConcurrentDictionary<Type, ICollection<Subscriber>> Subscribers = new ConcurrentDictionary<Type, ICollection<Subscriber>>();
 
         public ISubscriptionToken Subscribe<TPayload>(Action<TPayload> callback) => Subscribe(callback, ThreadOption.Default);
         public ISubscriptionToken Subscribe<TPayload>(Action<TPayload> callback, ThreadOption threadOption)
         {
-            ICollection<Subscriber> eventSubs = WeakSubscribers.GetOrAdd(typeof(TPayload), key => new List<Subscriber>());
+            ICollection<Subscriber> eventSubs = Subscribers.GetOrAdd(typeof(TPayload), key => new List<Subscriber>());
             lock (eventSubs)
             {
                 var sub = new Subscriber(callback) { ThreadOption = threadOption, Context = System.Threading.SynchronizationContext.Current };
@@ -22,7 +21,7 @@ namespace Kirides.Events
         public void Publish<TPayload>() where TPayload : new() => Publish(new TPayload());
         public void Publish<TPayload>(TPayload payload)
         {
-            if (WeakSubscribers.TryGetValue(typeof(TPayload), out ICollection<Subscriber> eventSubs))
+            if (Subscribers.TryGetValue(typeof(TPayload), out ICollection<Subscriber> eventSubs))
             {
                 ICollection<Subscriber> referencesToRemove = new List<Subscriber>();
                 lock (eventSubs)
@@ -67,7 +66,7 @@ namespace Kirides.Events
         public void Unsubscribe(ISubscriptionToken token) => token.Dispose();
         public void Unsubscribe<TPayload>(Action<TPayload> callback)
         {
-            if (WeakSubscribers.TryGetValue(typeof(TPayload), out ICollection<Subscriber> subs))
+            if (Subscribers.TryGetValue(typeof(TPayload), out ICollection<Subscriber> subs))
                 lock (subs)
                     foreach (var sub in subs)
                         if (sub.Reference.Target == callback.Target)

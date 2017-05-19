@@ -6,12 +6,12 @@ Collection of small - single-".cs" libraries.
 After having the need for a simple loosely coupled eventing system, and a little bit of boredom i decided to look up what it needs to create an simple EventAggregator implementation.
 
 It ...
-- supports any type of class for its payload (also supports primitive types)
+- supports any type of class for its payload (also primitive types!)
 - can unsubscribe via an ISubscriptionToken or via the callback you used while subscribing
-- should be threadsafe
+- is threadsafe
 - can handle UI-Dispatching for WPF (System.Windows.Threading.Dispatcher) and Windows Forms (SychronizationContext, limited to thread on which the subscription was made)
-- has no external dependencies (WindowsBase.dll for Windows Forms. But you can simply remove the depending part from the code.)
-- build for .Net Framework 4+ (ConcurrentDictionary<K,T>)
+- has no external dependencies (WindowsBase.dll and PresentationFramework.dll for Dispatcher.)
+- built for .Net Framework 4+ (ConcurrentDictionary<K,T>)
 
 ```csharp
 // IEventAggregator:
