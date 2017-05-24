@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example_EventAggregator", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kirides.Libs", "Kirides.Libs\Kirides.Libs.csproj", "{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kirides.Libs.Data.Dapper", "Kirides.Libs.Data.Dapper\Kirides.Libs.Data.Dapper.csproj", "{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}.Release|Any CPU.Build.0 = Release|Any CPU
+		{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
