@@ -6,6 +6,9 @@ using System.Text;
 
 namespace Kirides.Libs.Configuration
 {
+    /// <summary>
+    /// Default implementation of the IIniConfig interface
+    /// </summary>
     public class IniConfig : IIniConfig
     {
         const string DEFAULT_SECTION = "General";
@@ -53,7 +56,7 @@ namespace Kirides.Libs.Configuration
                 using (StreamReader sr = File.OpenText(filePath))
                 {
                     string actSection = DEFAULT_SECTION;
-                    string actLine;
+                    string actLine = null;
                     while ((actLine = sr.ReadLine()) != null)
                     {
                         actSection = HandleLine(actLine, actSection);
@@ -78,7 +81,7 @@ namespace Kirides.Libs.Configuration
                 string actSection = DEFAULT_SECTION;
                 for (int i = 0; i < lines.Length; i++)
                 {
-                    string actLine = lines[i].Trim();
+                    string actLine = lines[i];
                     actSection = HandleLine(actLine, actSection);
                 }
                 return this;
@@ -93,10 +96,11 @@ namespace Kirides.Libs.Configuration
         /// <returns>The section that is now being worked with</returns>
         private string HandleLine(string actLine, string actSection)
         {
-            if (actLine.StartsWith("#") || string.IsNullOrEmpty(actLine))
+            actLine = actLine.Trim();
+            if (actLine.StartsWith("#", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(actLine))
                 return actSection;
 
-            if (actLine.StartsWith("[") && actLine.EndsWith("]"))
+            if (actLine.StartsWith("[", StringComparison.OrdinalIgnoreCase) && actLine.EndsWith("]", StringComparison.OrdinalIgnoreCase))
             {
                 actSection = actLine.Substring(1, actLine.Length - 2);
                 AddSection(actSection);
@@ -107,7 +111,7 @@ namespace Kirides.Libs.Configuration
                 string key = actLine.Substring(0, indexOfEqSign);
                 string value = actLine.Substring(indexOfEqSign + 1);
 
-                var section = GetOrAddSection(actSection, () => new IniSection(actSection));
+                var section = GetOrAddSection(actSection, AddSection);
                 section.AddOrReplace(key, value);
             }
             return actSection;
@@ -115,7 +119,9 @@ namespace Kirides.Libs.Configuration
 
         /// <summary>
         /// Adds (if not exists) an IIniSection with the given Name and returns it.
+        /// <para>
         /// If a section already exists, it returns null.
+        /// </para>
         /// </summary>
         /// <param name="section">Name of the section</param>
         /// <returns>Implementation of IIniSection or null</returns>
@@ -132,17 +138,17 @@ namespace Kirides.Libs.Configuration
         }
 
         /// <summary>
-        /// Returns an Ini-section if it exists, or generates a new one.
+        /// Returns an Ini-section if it exists, or generates a new one using the provided generateSection method.
         /// </summary>
         /// <param name="section">Name of the section</param>
-        /// <param name="generateSection">Function to generate a new section if it does not exist</param>
+        /// <param name="generateSection">Function to generate a new section if it does not exist. Parameter is the Section</param>
         /// <returns>Implementation of IIniSection</returns>
-        private IIniSection GetOrAddSection(string section, Func<IIniSection> generateSection)
+        public IIniSection GetOrAddSection(string section, Func<string, IIniSection> generateSection)
         {
             IIniSection sec = GetSection(section);
             if (sec == null)
             {
-                sec = generateSection();
+                sec = generateSection(section);
                 lock (_ini)
                     _ini.Add(sec);
             }
@@ -150,12 +156,20 @@ namespace Kirides.Libs.Configuration
         }
 
         /// <summary>
-        /// Returns the requested Ini-section if it exists
+        /// Returns the requested Ini-section if it exists, else it creates it using <see cref="AddSection(string)"/> method.
+        /// </summary>
+        /// <param name="section">Name of the section</param>
+        /// <returns>Implementation of IIniSection or null</returns>
+        public IIniSection GetOrAddSection(string section)
+            => GetOrAddSection(section, AddSection);
+
+        /// <summary>
+        /// Returns the requested Ini-section if it exists, else it creates it using <see cref="AddSection(string)"/> method.
         /// </summary>
         /// <param name="section">Name of the section</param>
         /// <returns>Implementation of IIniSection or null</returns>
         public IIniSection this[string section]
-            => GetSection(section);
+            => GetOrAddSection(section, AddSection);
 
         /// <summary>
         /// Returns the requested Ini-section if it exists
@@ -239,8 +253,12 @@ namespace Kirides.Libs.Configuration
             /// <returns>Value with the requested Type</returns>
             public T GetValue<T>(string key)
             {
+                T result = default(T);
                 lock (KeyValuePairs)
-                    return (T)Convert.ChangeType(KeyValuePairs[key], typeof(T));
+                {
+                    result = (T)Convert.ChangeType(KeyValuePairs[key], typeof(T));
+                }
+                return result;
             }
             /// <summary>
             /// For details see:
@@ -248,7 +266,7 @@ namespace Kirides.Libs.Configuration
             /// </summary>
             /// <param name="key">Name of the key</param>
             /// <returns>Value as string</returns>
-            public string GetValue(string key)
+            public object GetValue(string key)
                 => GetValue<string>(key);
 
             /// <summary>
@@ -257,7 +275,7 @@ namespace Kirides.Libs.Configuration
             /// </summary>
             /// <param name="key">Name of the key</param>
             /// <returns>Value as string</returns>
-            public string this[string key]
+            public object this[string key]
             {
                 get => GetValue(key);
                 set => AddOrReplace(key, value);
@@ -315,6 +333,19 @@ namespace Kirides.Libs.Configuration
         /// <returns>Implementation of IIniSection or null</returns>
         IIniSection GetSection(string section);
         /// <summary>
+        /// Returns the requested Ini-section if it exists, else it creates it using <see cref="AddSection(string)"/> method.
+        /// </summary>
+        /// <param name="section">Name of the section</param>
+        /// <returns>Implementation of IIniSection or null</returns>
+        IIniSection GetOrAddSection(string section);
+        /// <summary>
+        /// Returns an Ini-section if it exists, or generates a new one using the provided generateSection method.
+        /// </summary>
+        /// <param name="section">Name of the section</param>
+        /// <param name="generateSection">Function to generate a new section if it does not exist</param>
+        /// <returns>Implementation of IIniSection</returns>
+        IIniSection GetOrAddSection(string section, Func<string, IIniSection> generateSection);
+        /// <summary>
         /// Removes the given section and all of its keys from the Ini
         /// </summary>
         /// <param name="section">Name of the section</param>
@@ -359,14 +390,14 @@ namespace Kirides.Libs.Configuration
         /// </summary>
         /// <param name="key">Name of the key</param>
         /// <returns>Value as string</returns>
-        string GetValue(string key);
+        object GetValue(string key);
         /// <summary>
         /// For details see:
         /// <see cref="GetValue(string)"/>
         /// </summary>
         /// <param name="key">Name of the key</param>
         /// <returns>Value as string</returns>
-        string this[string key] { get; set; }
+        object this[string key] { get; set; }
         /// <summary>
         /// Adds or replaces a key to/from the Ini
         /// </summary>

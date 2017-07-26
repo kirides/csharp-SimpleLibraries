@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Kirides.Libs.Extensions;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 namespace Kirides.Libs.Events
@@ -7,15 +8,15 @@ namespace Kirides.Libs.Events
     {
         private readonly ConcurrentDictionary<Type, ICollection<Subscriber>> Subscribers = new ConcurrentDictionary<Type, ICollection<Subscriber>>();
 
-        public ISubscriptionToken Subscribe<TPayload>(Action<TPayload> callback) => Subscribe(callback, ThreadOption.Default);
-        public ISubscriptionToken Subscribe<TPayload>(Action<TPayload> callback, ThreadOption threadOption)
+        public IDisposable Subscribe<TPayload>(Action<TPayload> callback) => Subscribe(callback, ThreadOption.Default);
+        public IDisposable Subscribe<TPayload>(Action<TPayload> callback, ThreadOption threadOption)
         {
-            ICollection<Subscriber> eventSubs = Subscribers.GetOrAdd(typeof(TPayload), key => new List<Subscriber>());
+            ICollection<Subscriber> eventSubs = Subscribers.GetOrAddSafe(typeof(TPayload), key => new List<Subscriber>());
             lock (eventSubs)
             {
                 var sub = new Subscriber(callback) { ThreadOption = threadOption, Context = System.Threading.SynchronizationContext.Current };
                 eventSubs.Add(sub);
-                return new SubscriptionToken(this, sub);
+                return new SubscriptionToken(sub);
             }
         }
         public void Publish<TPayload>() where TPayload : new() => Publish(new TPayload());
@@ -46,24 +47,14 @@ namespace Kirides.Libs.Events
                         eventSubs.Remove(item);
             }
         }
-        private void InvokeEvent<TPayload>(Subscriber sub, TPayload payload, ThreadOption threadOption = ThreadOption.Default)
+        private void InvokeEvent<TPayload>(Subscriber sub, TPayload payload, ThreadOption threadOption = ThreadOption.Inherited)
         {
-            if (threadOption == ThreadOption.UIThread)
-            {
-                if (System.Windows.Application.Current.Dispatcher != null)
-                    System.Windows.Application.Current.Dispatcher.BeginInvoke((Action)(() => sub.Invoke(payload)), System.Windows.Threading.DispatcherPriority.Normal);
-                else
-                    InvokeEvent(sub, payload, ThreadOption.Inherited);
-            }
+            if (threadOption == ThreadOption.Inherited && sub.Context != null)
+                sub.Context.Post((sender) => sub.Invoke(payload), null);
             else
-            {
-                if (threadOption == ThreadOption.Inherited && sub.Context != null)
-                    sub.Context.Post((sender) => sub.Invoke(payload), null);
-                else
-                    sub.Invoke(payload);
-            }
+                sub.Invoke(payload);
         }
-        public void Unsubscribe(ISubscriptionToken token) => token.Dispose();
+        public void Unsubscribe(IDisposable token) => token.Dispose();
         public void Unsubscribe<TPayload>(Action<TPayload> callback)
         {
             if (Subscribers.TryGetValue(typeof(TPayload), out ICollection<Subscriber> subs))
@@ -71,6 +62,7 @@ namespace Kirides.Libs.Events
                     foreach (var sub in subs)
                         if (sub.Reference.Target == callback.Target)
                         {
+                            sub.Dispose();
                             subs.Remove(sub);
                             break;
                         }
@@ -79,10 +71,6 @@ namespace Kirides.Libs.Events
 
     public enum ThreadOption
     {
-        /// <summary>
-        /// Runs the Event on the WPF-UiThread
-        /// </summary>
-        UIThread,
         /// <summary>
         /// Tries to run the Event on the Thread it was subscribed on, falls back to "Default" if on Threadpool Thread
         /// </summary>
@@ -94,24 +82,21 @@ namespace Kirides.Libs.Events
     }
     public interface IEventAggregator
     {
-        ISubscriptionToken Subscribe<TPayload>(Action<TPayload> callback);
-        ISubscriptionToken Subscribe<TPayload>(Action<TPayload> callback, ThreadOption threadOption);
+        IDisposable Subscribe<TPayload>(Action<TPayload> callback);
+        IDisposable Subscribe<TPayload>(Action<TPayload> callback, ThreadOption threadOption);
         void Publish<TPayload>() where TPayload : new();
         void Publish<TPayload>(TPayload payload);
         void Unsubscribe<TPayload>(Action<TPayload> callback);
-        void Unsubscribe(ISubscriptionToken token);
+        void Unsubscribe(IDisposable token);
     }
-    public interface ISubscriptionToken : IDisposable { }
-    public class SubscriptionToken : ISubscriptionToken
+    public class SubscriptionToken : IDisposable
     {
         private Subscriber subscriber;
-        private IEventAggregator eventAggregator;
         public bool IsDisposed { get; private set; }
 
-        public SubscriptionToken(IEventAggregator ea, Subscriber reference)
+        public SubscriptionToken(Subscriber reference)
         {
             this.subscriber = reference;
-            this.eventAggregator = ea;
         }
 
         /// <summary>
@@ -124,7 +109,6 @@ namespace Kirides.Libs.Events
             IsDisposed = true;
             subscriber.Dispose();
             subscriber = null;
-            eventAggregator = null;
         }
     }
     public class Subscriber : IDisposable
@@ -134,7 +118,7 @@ namespace Kirides.Libs.Events
         public ThreadOption ThreadOption { get; set; }
         public System.Threading.SynchronizationContext Context { get; set; }
         public bool IsAlive => Reference == null || (!_disposed && Reference == null) ? true : !_disposed && Reference.IsAlive;
-        private bool _disposed;
+        private bool _disposed { get; set; }
 
         public Subscriber(Delegate callback)
         {
@@ -175,11 +159,17 @@ namespace Kirides.Libs.Events
 
         public void Dispose()
         {
-            if (_disposed)
-                return;
+            Dispose(true);
+        }
+
+        protected void Dispose(bool disposing)
+        {
+            if (!disposing) return;
+            if (_disposed) return;
             _disposed = true;
             callback = null;
             Reference = null;
+            Context = null;
         }
     }
 }

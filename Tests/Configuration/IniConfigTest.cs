@@ -9,6 +9,7 @@ using System.IO;
 namespace Tests.Configuration
 {
     [TestClass]
+    [TestCategory("IniConfig")]
     public class IniConfigTest
     {
         const string iniTestFilePath = "testFile.ini";
@@ -25,7 +26,7 @@ namespace Tests.Configuration
 
         [TestMethod]
         public void ReadIniValueFromFile()
-            => Assert.IsTrue(Ini["User"]["Name"] == "John Doe");
+            => Assert.IsTrue(Ini["User"]["Name"].ToString() == "John Doe");
 
         [TestMethod]
         public void ReadInteger()
@@ -33,7 +34,7 @@ namespace Tests.Configuration
 
         [TestMethod]
         public void ReadString()
-            => Assert.IsTrue(Ini["General"].GetValue("fontsize") == "9");
+            => Assert.IsTrue(Ini["General"].GetValue("fontsize").ToString() == "9");
 
         [TestMethod]
         public void AddKeyWithPrimitiveValue()
@@ -51,7 +52,7 @@ namespace Tests.Configuration
 
             Ini.GetSection("General").AddOrReplace("float", testValue);
             var value = Ini["General"].GetValue("float");
-            Assert.IsTrue(value == testValue.ToString());
+            Assert.IsTrue(value.ToString() == testValue.ToString());
         }
 
         [TestMethod]
@@ -83,17 +84,25 @@ namespace Tests.Configuration
         }
 
         [TestMethod]
-        public void ReadInvalidSectionAndAccessKeyThrowNullReferenceException()
+        public void ReadKeyWithInvalidType()
         {
             try
             {
-                Ini["Derp"].GetValue("fontsize");
+                Ini["Audio"]["Volume"] = 80.5F;
+                Ini["Audio"].GetValue<Action>("Volume");
                 throw new AssertFailedException("No Exception was thrown!");
             }
-            catch (NullReferenceException ex)
+            catch (Exception ex)
             {
-                Assert.IsInstanceOfType(ex, typeof(NullReferenceException));
+                Assert.IsInstanceOfType(ex, typeof(InvalidCastException));
             }
+        }
+
+        [TestMethod]
+        public void AccessNonExistantSectionToCreateIt()
+        {
+            Ini["Derp"]["fontsize"] = 9;
+            Assert.IsTrue(Ini["Derp"].GetValue<int>("fontsize") == 9);
         }
 
         [TestMethod]
@@ -106,8 +115,8 @@ namespace Tests.Configuration
             ini.SaveToFile(iniTestFilePath);
             ini = IniConfig.FromFile(iniTestFilePath);
 
-            Assert.IsTrue(ini["User"].GetValue("Name") == "Olaf");
-            Assert.IsTrue(ini["User"].GetValue("Age") == "");
+            Assert.IsTrue(ini["User"].GetValue("Name").ToString() == "Olaf");
+            Assert.IsTrue(ini["User"].GetValue("Age").ToString() == "");
         }
     }
 }

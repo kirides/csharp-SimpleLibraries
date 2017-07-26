@@ -12,7 +12,9 @@ namespace SimpleEventAggregator.ViewModels
     {
         private readonly IEventAggregator eventAggregator;
         private string username;
-        private ISubscriptionToken timeSub;
+        int count;
+        private IDisposable timeSub2;
+        private IDisposable timeSub;
         LightObj o;
 
         public string Username
@@ -27,7 +29,6 @@ namespace SimpleEventAggregator.ViewModels
             Initialize();
         }
 
-
         private void Initialize()
         {
             o = new LightObj();
@@ -37,17 +38,22 @@ namespace SimpleEventAggregator.ViewModels
             timeSub2 = eventAggregator.Subscribe<string>(o.String);
         }
 
-        int count;
-        private ISubscriptionToken timeSub2;
 
         private void OnTimeChanged(string obj)
         {
             count++;
             Console.WriteLine(obj);
-            if (count > 5)
+            if (count > 2)
             {
-                eventAggregator.Unsubscribe<string>(o.String);
-                timeSub.Dispose();
+                if (o != null)
+                {
+                    eventAggregator.Unsubscribe<string>(o.String);
+                    o = null;
+                }
+                timeSub2.Dispose();
+                GC.Collect(2);
+                GC.WaitForPendingFinalizers();
+                GC.Collect(2);
             }
         }
 
