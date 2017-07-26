@@ -67,3 +67,36 @@ void AddOrReplaceKey(string key, object value = null);
 void RemoveKey(string key);
 ```
 ----
+## Kirides.Libs.Extensions.IQueryable.Search.IQueryableSearchExtensions
+Allows for Full-Text-Search of a given Type or Property/Field.
+It uses Expression-Trees and is compatible (in that it does the computation on the Db-side) with (few tested) ORM's (MongoDb.Driver, EntityFramework, ...)
+
+```csharp
+//DEMO
+
+IQueryable<File> files = ...;
+IQueryable<File> filesWithTest = files.FullTextSearch<File>(x => Name, "Test", exactMatch: false, matchAllWords: true);
+/*
+  File:
+  {
+    Name: "Production App Test.exe"
+  },
+  {
+    Name: "Production App Test.exe"
+  }
+*/
+
+IQueryable<Log> logs = ...;
+IQueryable<Log> logsWithError_404 = files.FullTextSearch<Log>("Error 404", exactMatch: false, matchAllWords: true);
+/*
+  Log:
+  { // Found because either "ShortDescription" or "Content" contained "Error" and "404"
+    ShortDescription: "Error code 404",
+    Content: "Website responded with Error code 404"
+  },
+  {
+    ShortDescription: "Error code 404", // Found because "ShortDescription" contained "Error" and "404"
+    Content: "Page could not be found"
+  }
+*/
+```
