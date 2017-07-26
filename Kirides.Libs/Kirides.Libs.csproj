@@ -47,9 +47,11 @@
     <Compile Include="Events\EventAggregator.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\IQueryable\Search\IQueryableSearchExtensions.cs" />
+    <Compile Include="Extensions\IQueryable\Sorting\SortExtensions.cs" />
     <Compile Include="Mvvm\ObservableObject.cs" />
     <Compile Include="Mvvm\ViewModelBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
