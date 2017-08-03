@@ -2,23 +2,34 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
+
 namespace Kirides.Libs.Events
 {
     public class EventAggregator : IEventAggregator
     {
         private readonly ConcurrentDictionary<Type, ICollection<Subscriber>> Subscribers = new ConcurrentDictionary<Type, ICollection<Subscriber>>();
 
-        public IDisposable Subscribe<TPayload>(Action<TPayload> callback) => Subscribe(callback, ThreadOption.Default);
-        public IDisposable Subscribe<TPayload>(Action<TPayload> callback, ThreadOption threadOption)
+        protected virtual IDisposable Subscribe<TPayload>(Action<TPayload> callback, SynchronizationContext synchronizationContext, ThreadOption threadOption)
         {
+            if (callback == null) throw new ArgumentNullException(nameof(callback));
+
             ICollection<Subscriber> eventSubs = Subscribers.GetOrAddSafe(typeof(TPayload), key => new List<Subscriber>());
             lock (eventSubs)
             {
-                var sub = new Subscriber(callback) { ThreadOption = threadOption, Context = System.Threading.SynchronizationContext.Current };
+                var sub = new Subscriber(callback) { ThreadOption = threadOption, Context = synchronizationContext };
                 eventSubs.Add(sub);
                 return new SubscriptionToken(sub);
             }
         }
+        public IDisposable Subscribe<TPayload>(Action<TPayload> callback) => Subscribe(callback, ThreadOption.Default);
+        public IDisposable Subscribe<TPayload>(Action<TPayload> callback, ThreadOption threadOption) => Subscribe(callback, SynchronizationContext.Current, threadOption);
+        public IDisposable Subscribe<TPayload>(Action<TPayload> callback, SynchronizationContext synchronizationContext)
+        {
+            if (synchronizationContext == null) throw new ArgumentNullException(nameof(synchronizationContext));
+            return Subscribe(callback, synchronizationContext, ThreadOption.Inherited);
+        }
+
         public void Publish<TPayload>() where TPayload : new() => Publish(new TPayload());
         public void Publish<TPayload>(TPayload payload)
         {
@@ -50,7 +61,7 @@ namespace Kirides.Libs.Events
         private void InvokeEvent<TPayload>(Subscriber sub, TPayload payload, ThreadOption threadOption = ThreadOption.Inherited)
         {
             if (threadOption == ThreadOption.Inherited && sub.Context != null)
-                sub.Context.Post((sender) => sub.Invoke(payload), null);
+                sub.Context.Post(x => sub.Invoke((TPayload)x), payload);
             else
                 sub.Invoke(payload);
         }
@@ -72,7 +83,9 @@ namespace Kirides.Libs.Events
     public enum ThreadOption
     {
         /// <summary>
-        /// Tries to run the Event on the Thread it was subscribed on, falls back to "Default" if on Threadpool Thread
+        /// Tries to run the Event on the Thread it was subscribed on
+        /// <para />Or the supplied one (for <see cref="IEventAggregator.Subscribe{TPayload}(Action{TPayload}, SynchronizationContext)"/>)
+        /// <para />Falls back to "Default" if there is no <see cref="SynchronizationContext"/>
         /// </summary>
         Inherited,
         /// <summary>
@@ -84,6 +97,7 @@ namespace Kirides.Libs.Events
     {
         IDisposable Subscribe<TPayload>(Action<TPayload> callback);
         IDisposable Subscribe<TPayload>(Action<TPayload> callback, ThreadOption threadOption);
+        IDisposable Subscribe<TPayload>(Action<TPayload> callback, SynchronizationContext synchronizationContext);
         void Publish<TPayload>() where TPayload : new();
         void Publish<TPayload>(TPayload payload);
         void Unsubscribe<TPayload>(Action<TPayload> callback);
@@ -116,7 +130,7 @@ namespace Kirides.Libs.Events
         public WeakReference Reference { get; private set; }
         private Delegate callback;
         public ThreadOption ThreadOption { get; set; }
-        public System.Threading.SynchronizationContext Context { get; set; }
+        public SynchronizationContext Context { get; set; }
         public bool IsAlive => Reference == null || (!_disposed && Reference == null) ? true : !_disposed && Reference.IsAlive;
         private bool _disposed { get; set; }
 
@@ -142,17 +156,13 @@ namespace Kirides.Libs.Events
 
         public bool Invoke<TPayload>(TPayload payload)
         {
-            if (!IsAlive || _disposed)
-                return false;
+            if (!IsAlive || _disposed) return false;
 
             object target = null;
-            if (Reference != null)
-                target = Reference.Target;
+            if (Reference != null) target = Reference.Target;
 
-            if (target == null)
-                this.callback.DynamicInvoke(payload);
-            else
-                this.callback.DynamicInvoke(target, payload);
+            if (target == null) this.callback.DynamicInvoke(payload);
+            else this.callback.DynamicInvoke(target, payload);
 
             return true;
         }

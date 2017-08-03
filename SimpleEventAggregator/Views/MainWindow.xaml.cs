@@ -1,5 +1,6 @@
 ﻿using Kirides.Libs.Events;
 using SimpleEventAggregator.ViewModels;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace SimpleEventAggregator.Views
@@ -10,8 +11,8 @@ namespace SimpleEventAggregator.Views
         {
             InitializeComponent();
             this.DataContext = viewModel;
-
-            App.EventAggregator.Subscribe<string>(OnStringEvent, ThreadOption.Inherited);
+            var ctxt = System.Threading.SynchronizationContext.Current;
+            Task.Run(() => App.EventAggregator.Subscribe<string>(OnStringEvent, ctxt));
         }
 
         private void OnStringEvent(string obj)
