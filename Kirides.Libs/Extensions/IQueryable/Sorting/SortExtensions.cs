@@ -23,7 +23,7 @@ namespace Kirides.Libs.Extensions.IQueryable.Sorting
         #endregion
 
         #region Public API
-        public static IQueryable<TSource> SortBy<TSource>(this IQueryable<TSource> source, string column, SortDirection sortDirection = SortDirection.asc)
+        public static IOrderedQueryable<TSource> SortBy<TSource>(this IQueryable<TSource> source, string column, SortDirection sortDirection = SortDirection.asc)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             // x => x.[column]
@@ -37,14 +37,13 @@ namespace Kirides.Libs.Extensions.IQueryable.Sorting
                 source.Expression,
                 sortSelector);
 
-            return source.Provider.CreateQuery<TSource>(orderByCallExpression);
+            return source.Provider.CreateQuery<TSource>(orderByCallExpression) as IOrderedQueryable<TSource>;
         }
-        public static IQueryable<TSource> ThenSortBy<TSource>(this IQueryable<TSource> source, string column, SortDirection sortDirection = SortDirection.asc)
+        public static IOrderedQueryable<TSource> ThenSortBy<TSource>(this IOrderedQueryable<TSource> source, string column, SortDirection sortDirection = SortDirection.asc)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             // x => x.[column]
             var sortSelector = GetSorting(source, column);
-
             // source.ThenBy(x => x.[column])
             MethodCallExpression thenByCallExpression = Expression.Call(
                 typeof(Queryable),
@@ -53,7 +52,7 @@ namespace Kirides.Libs.Extensions.IQueryable.Sorting
                 source.Expression,
                 sortSelector);
 
-            return source.Provider.CreateQuery<TSource>(thenByCallExpression);
+            return source.Provider.CreateQuery<TSource>(thenByCallExpression) as IOrderedQueryable<TSource>;
         }
         #endregion
     }
