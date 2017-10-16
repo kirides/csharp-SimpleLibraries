@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Configuration\IniConfig.cs" />
     <Compile Include="Events\EventAggregator.cs" />
+    <Compile Include="Extensions\DataTableExtensions.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\IQueryable\Search\IQueryableSearchExtensions.cs" />
     <Compile Include="Extensions\IQueryable\Sorting\SortExtensions.cs" />
