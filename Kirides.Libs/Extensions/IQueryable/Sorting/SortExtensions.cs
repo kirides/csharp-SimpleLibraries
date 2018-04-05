@@ -12,10 +12,20 @@ namespace Kirides.Libs.Extensions.IQueryable.Sorting
         private static LambdaExpression GetSorting<TSource>(IEnumerable<TSource> source, string column)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
+            string[] parts = new[] { column };
+            
+            if (column.Contains(".")) parts = column.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+            else parts = new[] { column };
+
             // x ...
             var parameter = Expression.Parameter(typeof(TSource), "x");
-            // x ... x.[column]
-            var property = Expression.Property(parameter, column);
+            // x ... x.[part1].[part2].[partX]
+            Expression property = null;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (property == null) property = Expression.Property(parameter, parts[i]);
+                else property = Expression.Property(property, parts[i]);
+            }
 
             // x => x.[column]
             return Expression.Lambda(property, new ParameterExpression[] { parameter });
