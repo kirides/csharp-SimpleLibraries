@@ -100,3 +100,31 @@ IQueryable<Log> logsWithError_404 = files.FullTextSearch<Log>("Error 404", exact
   }
 */
 ```
+----
+## Kirides.Libs.Extensions.IQueryable.Sorting.SortExtensions
+Allows for dynamic (string based) sorting of `IQueryable<TSource>`.  
+Supports nested properties. (No `IEnumerable<T>`-like properties)
+```cs
+IQueryable<User> users = ...;
+IOrderedQueryable<Users> usersById = users.SortBy("Name");
+IOrderedQueryable<Users> usersByIdThenDateDay = usersById.ThenSortBy("Date.Day");
+
+List<User> orderedUsers = usersByIdThenDateDay.ToList();
+
+class User
+{
+    public string Name { get; set; }
+    public DateTime Date { get; set; }
+}
+```
+----
+## Kirides.Libs.Extensions.IO.ByteSizeExtensions
+Humanizing of bytesizes for common datatypes used for sizes. (`double`, `float`, `long`, `int`)
+
+```cs
+double fileSize = 1024;
+string humanFileSize = fileSize.Humanize();
+// "1 KiB"
+string humanFileSizeSi = fileSize.Humanize(si: true);
+// "1,02 kB"
+```
