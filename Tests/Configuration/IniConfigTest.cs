@@ -18,7 +18,7 @@ namespace Tests.Configuration
 
         [TestInitialize]
         public void InitTest()
-            => Ini = IniConfig.FromFile(Path.Combine("Test_Utils", "StaticFiles", "Configuration.ini"));
+            => Ini = IniConfig.From(Path.Combine("Test_Utils", "StaticFiles", "Configuration.ini"));
 
         [TestCleanup]
         public void CleanupTest()
@@ -89,12 +89,12 @@ namespace Tests.Configuration
             try
             {
                 Ini["Audio"]["Volume"] = 80.5F;
-                Ini["Audio"].GetValue<Action>("Volume");
-                throw new AssertFailedException("No Exception was thrown!");
+                var v = Ini["Audio"].GetValue<IniConfig>("Volume");
+                Assert.Fail("No Exception was thrown. Value: {0}.\n", v);
             }
             catch (Exception ex)
             {
-                Assert.IsInstanceOfType(ex, typeof(InvalidCastException));
+                Assert.IsInstanceOfType(ex, typeof(InvalidCastException), ex.Message);
             }
         }
 
@@ -106,14 +106,18 @@ namespace Tests.Configuration
         }
 
         [TestMethod]
-        public void SaveToFile()
+        public void SaveTo()
         {
             File.Delete(iniTestFilePath);
-            IIniConfig ini = IniConfig.FromString(Constants.INI);
+            IIniConfig ini = IniConfig.Parse(Constants.INI);
             ini.GetSection("User").AddOrReplace("Name", "Olaf");
             ini.GetSection("User").AddOrReplaceKey("Age");
-            ini.SaveToFile(iniTestFilePath);
-            ini = IniConfig.FromFile(iniTestFilePath);
+            using (var ms = new MemoryStream())
+            {
+                ini.SaveTo(ms);
+                ms.Position = 0;
+                ini = IniConfig.From(ms);
+            }
 
             Assert.IsTrue(ini["User"].GetValue("Name").ToString() == "Olaf");
             Assert.IsTrue(ini["User"].GetValue("Age").ToString() == "");

@@ -18,9 +18,20 @@ namespace Kirides.Libs.Configuration
         /// </summary>
         /// <param name="filePath">Full or relative path to the Ini-file</param>
         /// <returns>Implementation of IIniConfig</returns>
-        public static IIniConfig FromFile(string filePath)
+        public static IIniConfig From(string filePath)
         {
-            return new IniConfig().LoadFile(filePath);
+            if (!File.Exists(filePath)) return null;
+            return new IniConfig().LoadStream(File.OpenRead(filePath));
+        }
+
+        /// <summary>
+        /// Returns an IIniConfig from a given file.
+        /// </summary>
+        /// <param name="filePath">Full or relative path to the Ini-file</param>
+        /// <returns>Implementation of IIniConfig</returns>
+        public static IIniConfig From(Stream stream)
+        {
+            return new IniConfig().LoadStream(stream);
         }
 
         /// <summary>
@@ -28,7 +39,7 @@ namespace Kirides.Libs.Configuration
         /// </summary>
         /// <param name="ini">string containing the Ini</param>
         /// <returns>Implementation of IIniConfig</returns>
-        public static IIniConfig FromString(string ini)
+        public static IIniConfig Parse(string ini)
         {
             return new IniConfig().LoadString(ini);
         }
@@ -40,20 +51,12 @@ namespace Kirides.Libs.Configuration
             _ini = new List<IIniSection>();
         }
 
-        /// <summary>
-        /// Creates an IIniConfig from an Ini-File
-        /// </summary>
-        /// <param name="filePath">path to the Ini-file</param>
-        /// <returns>Implementation of IIniConfig</returns>
-        IIniConfig LoadFile(string filePath)
+        public IIniConfig LoadStream(Stream stream)
         {
-            if (!File.Exists(filePath))
-                return null;
-
             lock (_ini)
             {
                 _ini.Clear();
-                using (StreamReader sr = File.OpenText(filePath))
+                using (StreamReader sr = new StreamReader(stream))
                 {
                     string actSection = DEFAULT_SECTION;
                     string actLine = null;
@@ -62,8 +65,8 @@ namespace Kirides.Libs.Configuration
                         actSection = HandleLine(actLine, actSection);
                     }
                 }
-                return this;
             }
+            return this;
         }
 
         /// <summary>
@@ -76,16 +79,16 @@ namespace Kirides.Libs.Configuration
             lock (_ini)
             {
                 _ini.Clear();
-                ini = ini.Replace("\r", "");
-                var lines = ini.Split('\n');
-                string actSection = DEFAULT_SECTION;
-                for (int i = 0; i < lines.Length; i++)
+                using (var sr = new StringReader(ini))
                 {
-                    string actLine = lines[i];
-                    actSection = HandleLine(actLine, actSection);
+                    string actSection = DEFAULT_SECTION;
+                    while (sr.ReadLine() is var actLine && actLine != null)
+                    {
+                        actSection = HandleLine(actLine, actSection);
+                    }
                 }
-                return this;
             }
+            return this;
         }
 
         /// <summary>
@@ -186,25 +189,44 @@ namespace Kirides.Libs.Configuration
         /// Saves the current Ini to the specified file
         /// </summary>
         /// <param name="fileName">Full or relative path to the file</param>
-        public void SaveToFile(string fileName)
+        public void SaveTo(string fileName)
         {
             using (var fs = File.Open(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read))
             {
                 byte[] buffer;
-                int bytesWritten = 0;
                 for (int i = 0; i < _ini.Count; i++)
                 {
                     buffer = Encoding.UTF8.GetBytes($"[{_ini[i].Name}]{Environment.NewLine}");
                     fs.Write(buffer, 0, buffer.Length);
-                    bytesWritten += buffer.Length;
                     for (int j = 0; j < _ini[i].KeyValuePairs.Count; j++)
                     {
                         var pair = _ini[i].KeyValuePairs.ElementAt(j);
 
                         buffer = Encoding.UTF8.GetBytes($"{pair.Key}={pair.Value ?? ""}{Environment.NewLine}");
                         fs.Write(buffer, 0, buffer.Length);
-                        bytesWritten += buffer.Length;
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Writes the current Ini to the specified <paramref name="stream"/> using <see cref="Encoding.UTF8"/> as encoding.
+        /// <para/>
+        /// Uses <see cref="Environment.NewLine"/> for line endings.
+        /// </summary>
+        public void SaveTo(Stream stream)
+        {
+            byte[] buffer;
+            for (int i = 0; i < _ini.Count; i++)
+            {
+                buffer = Encoding.UTF8.GetBytes($"[{_ini[i].Name}]{Environment.NewLine}");
+                stream.Write(buffer, 0, buffer.Length);
+                for (int j = 0; j < _ini[i].KeyValuePairs.Count; j++)
+                {
+                    var pair = _ini[i].KeyValuePairs.ElementAt(j);
+
+                    buffer = Encoding.UTF8.GetBytes($"{pair.Key}={pair.Value ?? ""}{Environment.NewLine}");
+                    stream.Write(buffer, 0, buffer.Length);
                 }
             }
         }
@@ -360,7 +382,11 @@ namespace Kirides.Libs.Configuration
         /// Saves the current Ini to the specified file
         /// </summary>
         /// <param name="fileName">Full or relative path to the file</param>
-        void SaveToFile(string fileName);
+        void SaveTo(string fileName);
+        /// <summary>
+        /// Writes the current Ini to the specified <paramref name="stream"/> using <see cref="Encoding.UTF8"/> as encoding.
+        /// </summary>
+        void SaveTo(Stream stream);
     }
 
     /// <summary>
