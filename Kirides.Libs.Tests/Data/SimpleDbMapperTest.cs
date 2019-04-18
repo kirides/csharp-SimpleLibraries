@@ -51,9 +51,9 @@ namespace Kirides.Libs.Tests.Data
         private void FillDatabase(SQLiteConnection sqlite)
         {
             var cmd = sqlite.CreateCommand();
-            cmd.CommandText = "CREATE TABLE Users (Id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Firstname TEXT NULL )";
+            cmd.CommandText = "CREATE TABLE Users (Id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Firstname TEXT DEFAULT NULL )";
             cmd.ExecuteNonQuery();
-            cmd.CommandText = "INSERT INTO Users (Name) VALUES ('Hans')";
+            cmd.CommandText = "INSERT INTO Users (Name, Firstname) VALUES ('Hans', NULL)";
             cmd.ExecuteNonQuery();
         }
     }

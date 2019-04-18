@@ -29,7 +29,7 @@ namespace Kirides.Libs.Data
             var rowValues = GetBuffer(rdr.VisibleFieldCount);
             var totalValues = rdr.GetValues(rowValues);
 
-            var factory = ObjectFactory<T>.Create(GenerateColumns(rdr, totalValues, rowValues));
+            var factory = ObjectFactory<T>.Create(GenerateColumns(rdr, totalValues));
 
             T result = factory(rowValues);
             return result;
@@ -47,7 +47,7 @@ namespace Kirides.Libs.Data
             var rowValues = GetBuffer(rdr.VisibleFieldCount);
             var totalValues = rdr.GetValues(rowValues);
 
-            var factory = ObjectFactory<T>.Create(GenerateColumns(rdr, totalValues, rowValues));
+            var factory = ObjectFactory<T>.Create(GenerateColumns(rdr, totalValues));
 
             List<T> result = new List<T>
             {
@@ -70,7 +70,7 @@ namespace Kirides.Libs.Data
                 var rowValues = GetBuffer(rdr.VisibleFieldCount);
                 var totalValues = rdr.GetValues(rowValues);
 
-                var factory = ObjectFactory<T>.Create(GenerateColumns(rdr, totalValues, rowValues));
+                var factory = ObjectFactory<T>.Create(GenerateColumns(rdr, totalValues));
 
                 yield return factory(rowValues);
 
@@ -91,10 +91,13 @@ namespace Kirides.Libs.Data
             return buffer.Value;
         }
 
-        IEnumerable<TableColumn> GenerateColumns(DbDataReader reader, int totalColumns, object[] rows)
+        TableColumn[] GenerateColumns(DbDataReader reader, int totalColumns)
         {
+            TableColumn[] result = new TableColumn[totalColumns];
             for (int i = 0; i < totalColumns; i++)
-                yield return new TableColumn { ColumnName = reader.GetName(i), DataType = rows[i].GetType() };
+                result[i] = new TableColumn { ColumnName = reader.GetName(i), DataType = reader.GetFieldType(i) };
+
+            return result;
         }
 
         private Task<DbDataReader> GetReaderAsync(DbConnection dbConnection, string sql, object parameters, CancellationToken cancellationToken)
@@ -132,35 +135,19 @@ namespace Kirides.Libs.Data
 
         private static class ObjectFactory<T>
         {
-            static Func<object[], T> factory = null;
+            private static readonly Dictionary<Type, Dictionary<string, MemberInfo>> typeCaches
+                = new Dictionary<Type, Dictionary<string, MemberInfo>>();
 
+                private static readonly ParameterExpression CtorArgsExpression = Expression.Parameter(typeof(object[]), "args");
             public static Func<object[], T> Create(IEnumerable<TableColumn> cols)
             {
-                if (factory != null)
-                {
-                    return factory;
-                }
                 var type = typeof(T);
                 if (type.IsPrimitive)
                 {
-                    return factory = (data) => (T)data[0];
+                    return GetFirst;
                 }
-                var props = type.GetProperties().ToList<MemberInfo>().Concat(type.GetFields()).ToDictionary(k => k.Name, t => t);
-                var toAdd = new Dictionary<string, MemberInfo>();
-                foreach (var kvp in props)
-                {
-                    var customName = kvp.Value.GetCustomAttribute<ColumnAttribute>()?.Name;
-                    if ((customName != null) && (customName != kvp.Key))
-                    {
-                        toAdd.Add(customName, kvp.Value);
-                    }
-                }
-                if (toAdd.Count > 0)
-                {
-                    props = props.Concat(toAdd).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-                }
+                var props = GetMembers(type);
 
-                var ctorDepsExpr = Expression.Parameter(typeof(object[]), "args");
                 List<MemberBinding> memberBindings = new List<MemberBinding>();
 
                 int idx = -1;
@@ -174,7 +161,7 @@ namespace Kirides.Libs.Data
                     }
                     var index = Expression.Constant(idx);
 
-                    var elementAtIndex = Expression.ArrayIndex(ctorDepsExpr, index);
+                    var elementAtIndex = Expression.ArrayIndex(CtorArgsExpression, index);
                     var memberType = (prop as PropertyInfo)?.PropertyType ?? (prop as FieldInfo)?.FieldType ?? throw new InvalidCastException("Not a Property or Field");
                     var convertExpression = ValueOrDefaultExpression(elementAtIndex, memberType);
 
@@ -184,8 +171,33 @@ namespace Kirides.Libs.Data
                 var minit = Expression.MemberInit(Expression.New(type), memberBindings);
 
                 // args => new Item() { X = (type)args[0], Y = (type)args[1], ... }
-                var lambda = Expression.Lambda<Func<object[], T>>(minit, ctorDepsExpr);
-                return factory = lambda.Compile();
+                var lambda = Expression.Lambda<Func<object[], T>>(minit, CtorArgsExpression);
+                return lambda.Compile();
+            }
+            private static T GetFirst(object[] data) => (T)data[0];
+
+            private static Dictionary<string, MemberInfo> GetMembers(Type type)
+            {
+                if (!typeCaches.TryGetValue(type, out var props))
+                {
+                    props = type.GetProperties().ToList<MemberInfo>().Concat(type.GetFields()).ToDictionary(k => k.Name, t => t);
+                    var toAdd = new Dictionary<string, MemberInfo>();
+                    foreach (var kvp in props)
+                    {
+                        var customName = kvp.Value.GetCustomAttribute<ColumnAttribute>()?.Name;
+                        if ((customName != null) && (customName != kvp.Key))
+                        {
+                            toAdd.Add(customName, kvp.Value);
+                        }
+                    }
+                    if (toAdd.Count > 0)
+                    {
+                        props = props.Concat(toAdd).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                    }
+                    typeCaches[type] = props;
+                }
+
+                return props;
             }
         }
         private static readonly ConstantExpression DBNullExpression = Expression.Constant(DBNull.Value);
@@ -193,10 +205,8 @@ namespace Kirides.Libs.Data
         {
             return Expression.Condition(
                 Expression.Equal(value, DBNullExpression),
-                Expression.Default(defaultType),
+                defaultType.IsValueType ? (Expression)Expression.Default(defaultType) : Expression.Constant(null, defaultType),
                 Expression.Convert(value, defaultType));
-
-
         }
     }
 }
