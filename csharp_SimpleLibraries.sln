@@ -1,15 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.202
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example_EventAggregator", "SimpleEventAggregator\Example_EventAggregator.csproj", "{579D2840-6B00-4E18-8CEC-DDEAED4CA340}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kirides.Libs", "Kirides.Libs\Kirides.Libs.csproj", "{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kirides.Libs.Data.Dapper", "Kirides.Libs.Data.Dapper\Kirides.Libs.Data.Dapper.csproj", "{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kirides.Libs.Tests", "Kirides.Libs.Tests\Kirides.Libs.Tests.csproj", "{13C1A6E4-95D0-48E3-9EAC-187E36543D6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{579D2840-6B00-4E18-8CEC-DDEAED4CA340}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{579D2840-6B00-4E18-8CEC-DDEAED4CA340}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{579D2840-6B00-4E18-8CEC-DDEAED4CA340}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{579D2840-6B00-4E18-8CEC-DDEAED4CA340}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE4ADF6F-9E2A-4F82-A369-C8FC42C2435B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -29,12 +23,15 @@ Global
 		{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD1A9076-C16A-4F70-B0B0-F9AF1FC78567}.Release|Any CPU.Build.0 = Release|Any CPU
-		{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{695F5A5B-8DA3-4BC8-8102-3CCFFECE2894}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13C1A6E4-95D0-48E3-9EAC-187E36543D6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13C1A6E4-95D0-48E3-9EAC-187E36543D6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13C1A6E4-95D0-48E3-9EAC-187E36543D6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13C1A6E4-95D0-48E3-9EAC-187E36543D6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9B160C4A-30B2-4FC5-A999-9ECBEBD129BA}
 	EndGlobalSection
 EndGlobal

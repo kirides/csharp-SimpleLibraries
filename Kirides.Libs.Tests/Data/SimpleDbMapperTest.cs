@@ -1,5 +1,4 @@
 ﻿using Kirides.Libs.Data;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -8,14 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Tests.Test_Utils.Helpers;
+using Xunit;
 
-namespace Tests.Data
+namespace Kirides.Libs.Tests.Data
 {
-    [TestClass]
     public class SimpleDbMapperTest
     {
-        [TestMethod]
+        [Fact]
         public async Task TestSingleMapping()
         {
             SQLiteConnection sqlite = new SQLiteConnection("Data Source=:memory:");
@@ -27,11 +25,11 @@ namespace Tests.Data
             var result = await mapper.GetAsync<User>(sqlite, "SELECT Name FROM Users WHERE Id = 1", null, CancellationToken.None);
 
             sw.Stop();
-            var memoryUsed = ((double)GC.GetTotalMemory(false) - memUsageBefore).ToReadableBytes();
-            var meanMemoryUsed = ((double)GC.GetTotalMemory(true) - memUsageBefore).ToReadableBytes();
+            var memoryUsed = ((double)GC.GetTotalMemory(false) - memUsageBefore);
+            var meanMemoryUsed = ((double)GC.GetTotalMemory(true) - memUsageBefore);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task TestLazyMapping()
         {
             SQLiteConnection sqlite = new SQLiteConnection("Data Source=:memory:");
@@ -46,14 +44,14 @@ namespace Tests.Data
             }
 
             sw.Stop();
-            var memoryUsed = ((double)GC.GetTotalMemory(false) - memUsageBefore).ToReadableBytes();
-            var meanMemoryUsed = ((double)GC.GetTotalMemory(true) - memUsageBefore).ToReadableBytes();
+            var memoryUsed = ((double)GC.GetTotalMemory(false) - memUsageBefore);
+            var meanMemoryUsed = ((double)GC.GetTotalMemory(true) - memUsageBefore);
         }
 
         private void FillDatabase(SQLiteConnection sqlite)
         {
             var cmd = sqlite.CreateCommand();
-            cmd.CommandText = "CREATE TABLE Users (Id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, FIRSTNAME TEXT NULL )";
+            cmd.CommandText = "CREATE TABLE Users (Id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Firstname TEXT NULL )";
             cmd.ExecuteNonQuery();
             cmd.CommandText = "INSERT INTO Users (Name) VALUES ('Hans')";
             cmd.ExecuteNonQuery();
@@ -64,5 +62,6 @@ namespace Tests.Data
     {
         public long Id { get; set; }
         public string Name { get; set; }
+        public string Firstname { get; set; }
     }
 }

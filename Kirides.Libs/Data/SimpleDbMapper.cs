@@ -174,7 +174,7 @@ namespace Kirides.Libs.Data
                     var index = Expression.Constant(idx);
 
                     var elementAtIndex = Expression.ArrayIndex(ctorDepsExpr, index);
-                    var convertExpression = Expression.Convert(elementAtIndex, col.DataType);
+                    var convertExpression = ValueOrDefaultExpression(elementAtIndex, col.DataType);
 
                     memberBindings.Add(Expression.Bind(prop, convertExpression));
                 }
@@ -185,6 +185,16 @@ namespace Kirides.Libs.Data
                 var lambda = Expression.Lambda<Func<object[], T>>(minit, ctorDepsExpr);
                 return factory = lambda.Compile();
             }
+        }
+        private static readonly ConstantExpression DBNullExpression = Expression.Constant(DBNull.Value);
+        private static ConditionalExpression ValueOrDefaultExpression(Expression value, Type defaultType)
+        {
+            return Expression.Condition(
+                Expression.Equal(value, DBNullExpression),
+                Expression.Default(defaultType),
+                Expression.Convert(value, defaultType));
+
+
         }
 
         public class DataColumnAttribute : Attribute
