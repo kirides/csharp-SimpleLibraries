@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -38,7 +39,7 @@ namespace Kirides.Libs.Extensions
             var toAdd = new Dictionary<string, MemberInfo>();
             foreach (var kvp in props)
             {
-                var customName = kvp.Value.GetCustomAttribute<DataColumnAttribute>()?.Name;
+                var customName = kvp.Value.GetCustomAttribute<ColumnAttribute>()?.Name;
                 if ((customName != null) && (customName != kvp.Key))
                 {
                     toAdd.Add(customName, kvp.Value);
@@ -57,17 +58,15 @@ namespace Kirides.Libs.Extensions
             foreach (var kvp in cols)
             {
                 idx++;
-                if (!props.TryGetValue(kvp.Key, out var prop) ||
-                    (prop is PropertyInfo pi && pi.PropertyType != kvp.Value) ||
-                    (prop is FieldInfo fi && fi.FieldType != kvp.Value))
+                if (!props.TryGetValue(kvp.Key, out var prop))
                 {
                     continue;
                 }
                 var index = Expression.Constant(idx);
-                Type paramType = kvp.Value;
-
                 var elementAtIndex = Expression.ArrayIndex(ctorDepsExpr, index);
-                var convertExpression = Expression.Convert(elementAtIndex, paramType);
+                var memberType = (prop as PropertyInfo)?.PropertyType ?? (prop as FieldInfo)?.FieldType ?? throw new InvalidCastException("Not a Property or Field");
+
+                var convertExpression = ValueOrDefaultExpression(elementAtIndex, memberType);
 
                 memberBindings.Add(Expression.Bind(prop, convertExpression));
             }
@@ -98,15 +97,14 @@ namespace Kirides.Libs.Extensions
             T itm = (T)factory(values);
             return itm;
         }
-    }
 
-    public class DataColumnAttribute : Attribute
-    {
-        public string Name { get; }
-
-        public DataColumnAttribute(string columnName)
+        private static readonly ConstantExpression DBNullExpression = Expression.Constant(DBNull.Value);
+        private static ConditionalExpression ValueOrDefaultExpression(Expression value, Type defaultType)
         {
-            this.Name = columnName ?? throw new ArgumentNullException(nameof(columnName));
+            return Expression.Condition(
+                Expression.Equal(value, DBNullExpression),
+                defaultType.IsValueType ? (Expression)Expression.Default(defaultType) : Expression.Constant(null, defaultType),
+                Expression.Convert(value, defaultType));
         }
     }
 }
