@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
@@ -148,7 +149,7 @@ namespace Kirides.Libs.Data
                 var toAdd = new Dictionary<string, MemberInfo>();
                 foreach (var kvp in props)
                 {
-                    var customName = kvp.Value.GetCustomAttribute<DataColumnAttribute>()?.Name;
+                    var customName = kvp.Value.GetCustomAttribute<ColumnAttribute>()?.Name;
                     if ((customName != null) && (customName != kvp.Key))
                     {
                         toAdd.Add(customName, kvp.Value);
@@ -174,7 +175,8 @@ namespace Kirides.Libs.Data
                     var index = Expression.Constant(idx);
 
                     var elementAtIndex = Expression.ArrayIndex(ctorDepsExpr, index);
-                    var convertExpression = ValueOrDefaultExpression(elementAtIndex, col.DataType);
+                    var memberType = (prop as PropertyInfo)?.PropertyType ?? (prop as FieldInfo)?.FieldType ?? throw new InvalidCastException("Not a Property or Field");
+                    var convertExpression = ValueOrDefaultExpression(elementAtIndex, memberType);
 
                     memberBindings.Add(Expression.Bind(prop, convertExpression));
                 }
@@ -195,16 +197,6 @@ namespace Kirides.Libs.Data
                 Expression.Convert(value, defaultType));
 
 
-        }
-
-        public class DataColumnAttribute : Attribute
-        {
-            public string Name { get; }
-
-            public DataColumnAttribute(string columnName)
-            {
-                this.Name = columnName ?? throw new ArgumentNullException(nameof(columnName));
-            }
         }
     }
 }
